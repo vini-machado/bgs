@@ -22,6 +22,10 @@ class BaseConnection(ContextDecorator):
 
         return True
     
+    def get_table_names(self) -> list[str]:
+        tables = self.cursor.tables(tableType='TABLE')
+        return [table.table_name for table in tables.fetchall()]
+
     def fetch(self, sql_file:str):
         query = self.read_sql_file(sql_file)
 
@@ -56,3 +60,14 @@ class Mdb(BaseConnection):
             r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
             f'DBQ={self.source_file};'
         )
+
+    def export_excel(self):
+        output_file = 'bwf_standard.xlsx'
+        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+            for table_name in self.get_table_names():
+                # Read each table into a DataFrame
+                query = f'SELECT * FROM [{table_name}]'
+                df = pd.read_sql(query, self.conn)
+            
+                # Write the DataFrame to the Excel file
+                df.to_excel(writer, sheet_name=table_name, index=False)

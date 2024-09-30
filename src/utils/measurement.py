@@ -27,12 +27,12 @@ def get_rough_data(rough_data_locations: pd.Series):
                 entry = {
                     "data_file": location,
                     "position_id": int(shots_list.get("position-iD", 0)),
-                    "measurement": shots_list.get("diameter-land"),
+                    "diameter_land": shots_list.get("diameter-land"),
+                    "diameter_groove": shots_list.get("diameter-groove"),
                     # "status": shots_list.get("status"),
                     # "depth": shots_list.get("depth"),
                     # "groove_is_ready": shots_list.get("groove-is-ready"),
                     # "index": shots_list.get("index"),
-                    # "diameter_groove": shots_list.get("diameter-groove"),
                     # "land_is_ready": shots_list.get("land-is-ready"),
                     # "is_depth_measured": shots_list.get("is-depth-measured"),
                     # "is_valid": shots_list.get("is-valid")
@@ -42,54 +42,34 @@ def get_rough_data(rough_data_locations: pd.Series):
             print(f"Error parsing file {location}: {e}")
     return pd.DataFrame(data)
 
-def get_measurements(archives: list = [], report_data: dict = {}, should_open_file: bool = True):
+def raw_extracted_data():
     with Mdb() as db:
         dataframe = db.fetch('measurements')
 
     rough_data = get_rough_data(dataframe['data_file'])
     dataframe = dataframe.merge(rough_data, how='inner', on=['data_file', 'position_id'])
 
-    dataframe = dataframe[['system_name', 'measurement_name', 'archive_name', 'measurement_date', 'depth', 'measurement']]
-    dataframe['measurement'] = dataframe['measurement'].astype(float) 
-    
+    return dataframe
+
+def transform_columns(df: pd.DataFrame):
+    df['diameter_land'] = df['diameter_land'].astype(float) 
+    df['diameter_groove'] = df['diameter_groove'].astype(float)
+    df['measurement_date'] = df['measurement_date'].dt.date
+
+    return df
+
+def extract_measurement_data(archives: list = []):
+    dataframe = raw_extracted_data()
+
     if archives:
         dataframe = dataframe[dataframe['archive_name'].isin(archives)]
 
-    save_path = export_measurements(dataframe)
-    write_report(report_data)
+    dataframe = transform_columns(dataframe)
+    columns = ['measurement_date', 'measurement_name', 'depth', 'diameter_land', 'diameter_groove']
+    
+    if dataframe['diameter_groove'].max() == 0:
+        columns.remove('diameter_groove')
 
-    if should_open_file:
-        open_excel_file(save_path)
+    dataframe = dataframe[columns]
 
     return dataframe
-
-def export_measurements(dataframe: pd.DataFrame) -> Path:
-    today = datetime.now().strftime("%Y-%m-%d")
-
-    save_path = Path(os.getcwd()).parent.joinpath('exports', f'{today}.xlsx')
-    dataframe.to_excel(save_path, index=False)
-
-    return save_path
-
-def write_report(report_data: dict, template_file: str = r"C:/Users/HPI/Documents/BGS/src/template.xlsx"):
-    wb = openpyxl.load_workbook(template_file)
-    today = datetime.now() #.strftime("%Y-%m-%d")
-
-    date_values_for_report = {
-        'date': today.strftime("%d/%m/%Y"),
-        'year': str(today.year),
-        'extended_date': today.strftime("%d de %B de %Y")
-    }
-
-    report_data = report_data | date_values_for_report
-
-    for row in wb.worksheets[0]: # first page
-        for cell in row:
-            if isinstance(cell.value, str) and ('<' in cell.value and '>' in cell.value):
-                for key, value in report_data.items():
-                    cell.value = cell.value.replace(f"<{key}>", value)
-
-
-    wb.save("C:/Users/HPI/Documents/BGS/src/template_escrito.xlsx")
-    open_excel_file("C:/Users/HPI/Documents/BGS/src/template_escrito.xlsx")
-

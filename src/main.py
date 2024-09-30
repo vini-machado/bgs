@@ -1,5 +1,11 @@
-from utils.gui_v2 import execute_extractor_window
+
+from utils.gui import ExtractorApp
+import tkinter as tk
+
+
 
 if __name__ == "__main__":
-    execute_extractor_window()
+    root = tk.Tk()
     
+    app = ExtractorApp(root)
+    root.mainloop()
