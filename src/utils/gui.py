@@ -1,9 +1,11 @@
-from dataclasses import dataclass
 import tkinter as tk
-from tkinter import ttk, messagebox
-from config.database import Mdb
+from dataclasses import dataclass
+from tkinter import messagebox
 from typing import Optional
+
+from config.database import Mdb
 from utils.report import generate_report
+
 
 @dataclass
 class Field:
@@ -14,7 +16,8 @@ class Field:
     def get_input(self):
         if isinstance(self.input_value, tk.Entry):
             return {self.identifier: self.input_value.get()}
-        return {self.identifier: ''}
+        return {self.identifier: ""}
+
 
 class FormData:
     def __init__(self, root: tk.Frame, fields: list[Field]) -> None:
@@ -25,7 +28,9 @@ class FormData:
 
     def create_input_field(self):
         for index, field in enumerate(self.fields):
-            tk.Label(self.root, text=field.label).grid(row=index, column=0, padx=10, pady=5, sticky="e")
+            tk.Label(self.root, text=field.label).grid(
+                row=index, column=0, padx=10, pady=5, sticky="e"
+            )
             entry = tk.Entry(self.root, width=40)
             entry.grid(row=index, column=1, padx=10, pady=5)
             field.input_value = entry
@@ -35,6 +40,7 @@ class FormData:
         for field in self.fields:
             data = data | field.get_input()
         return data
+
 
 class ExtractorApp:
     def __init__(self, root: tk.Tk):
@@ -60,7 +66,9 @@ class ExtractorApp:
         screen_height = self.root.winfo_screenheight()
         position_x = int((screen_width / 2) - (self.window_width / 2))
         position_y = int((screen_height / 2) - (self.window_height / 2))
-        self.root.geometry(f"{self.window_width}x{self.window_height}+{position_x}+{position_y}")
+        self.root.geometry(
+            f"{self.window_width}x{self.window_height}+{position_x}+{position_y}"
+        )
 
     def create_widgets(self):
         # Create main frame for better organization
@@ -76,7 +84,13 @@ class ExtractorApp:
         label.pack(pady=10)
 
         # Create a Listbox with multiple options
-        self.listbox = tk.Listbox(listbox_frame, selectmode=tk.MULTIPLE, width=30, height=10, justify=tk.CENTER)
+        self.listbox = tk.Listbox(
+            listbox_frame,
+            selectmode=tk.MULTIPLE,
+            width=30,
+            height=10,
+            justify=tk.CENTER,
+        )
         self.populate_listbox()
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH)
 
@@ -91,23 +105,29 @@ class ExtractorApp:
         form_frame.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
         # Create labels and entry fields for additional data
-        self.formdata = FormData(root=form_frame,
-                                 fields=[
-                                     Field(identifier="report_id", label="ID do Relatório:"),
-                                     Field(identifier="material", label="Material Avaliado:"),
-                                     Field(identifier="manufacturer", label="Fabricante:"),
-                                     Field(identifier="temperature", label="Temperatura:"),
-                                     Field(identifier="humidity", label="Umidade:")
-                                 ])
+        self.formdata = FormData(
+            root=form_frame,
+            fields=[
+                Field(identifier="report_id", label="ID do Relatório:"),
+                Field(identifier="material", label="Material Avaliado:"),
+                Field(identifier="manufacturer", label="Fabricante:"),
+                Field(identifier="temperature", label="Temperatura:"),
+                Field(identifier="humidity", label="Umidade:"),
+            ],
+        )
 
         # Button to submit the selected value and additional data
-        submit_button = tk.Button(form_frame, text="Gerar Relatório", command=self.submit_value)
-        submit_button.grid(row=len(self.formdata.fields) + 1, column=0, columnspan=2, pady=10)
+        submit_button = tk.Button(
+            form_frame, text="Gerar Relatório", command=self.submit_value
+        )
+        submit_button.grid(
+            row=len(self.formdata.fields) + 1, column=0, columnspan=2, pady=10
+        )
 
     def populate_listbox(self):
         with Mdb() as db:
-            archives = db.fetch('archives')
-        options = archives['archive_name'].tolist()
+            archives = db.fetch("archives")
+        options = archives["archive_name"].tolist()
 
         for option in options:
             self.listbox.insert(tk.END, option)
@@ -115,7 +135,9 @@ class ExtractorApp:
     def validate_form(self):
         report_data = self.formdata.extract_inputs()
         if not report_data["report_id"] or not report_data["material"]:
-            messagebox.showerror("Validation Error", "Report ID and Material are required!")
+            messagebox.showerror(
+                "Validation Error", "Report ID and Material are required!"
+            )
             return False
         return True
 

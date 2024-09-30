@@ -1,6 +1,7 @@
 import os
 import platform
 
+
 def open_excel_file(file_path: str):
     if os.path.exists(file_path):
         # Determine the operating system and open the file with the default application
