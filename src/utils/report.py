@@ -42,7 +42,9 @@ def generate_report(
         "measurement_date": dataframe["measurement_date"]
         .unique()
         .min()
-        .strftime("%d/%m/%Y"),
+        .strftime("%d/%m/%Y")
+        if not dataframe.empty
+        else today.strftime("%d/%m/%Y"),
     }
 
     report_data = report_data | date_values_for_report
