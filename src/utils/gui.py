@@ -1,4 +1,5 @@
 import tkinter as tk
+import traceback
 from dataclasses import dataclass
 from tkinter import messagebox
 from typing import Optional
@@ -132,25 +133,15 @@ class ExtractorApp:
         for option in options:
             self.listbox.insert(tk.END, option)
 
-    def validate_form(self):
-        report_data = self.formdata.extract_inputs()
-        if not report_data["report_id"] or not report_data["material"]:
-            messagebox.showerror(
-                "Validation Error", "Report ID and Material are required!"
-            )
-            return False
-        return True
-
     def submit_value(self):
-        if self.validate_form():
-            selected_indices = self.listbox.curselection()
-            selected_archives = [self.listbox.get(i) for i in selected_indices]
+        selected_indices = self.listbox.curselection()
+        selected_archives = [self.listbox.get(i) for i in selected_indices]
 
-            # Get values from the input fields
+        # Get values from the input fields
+        try:
             report_data = self.formdata.extract_inputs()
-
-            # Generate report (assumed function)
             generate_report(report_data, selected_archives)
 
-            # Display success message
-            messagebox.showinfo("Success", "Report generated successfully!")
+            # messagebox.showinfo("Success", "Report generated successfully!")
+        except Exception as e:
+            messagebox.showerror(type(e).__name__, traceback.format_exc())
